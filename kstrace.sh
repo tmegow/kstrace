@@ -33,13 +33,13 @@ if [ ${1:-nope} == "nope" ]; then
     exit 1
 fi
 POD=$1
-NODE=$($(which kubectl) --context $CONTEXT -n $NAMESPACE get po $POD -o json | jq -r '.spec.nodeName')
+NODE=$(kubectl --context $CONTEXT -n $NAMESPACE get po $POD -o json | jq -r '.spec.nodeName')
 
 function get-containers() {
-    if [[ $($(which kubectl) get po --context $CONTEXT -n $NAMESPACE $POD -o json | jq -r '.spec.containers | length') -eq 1 ]]; then
-        TARGET_CONTAINER=$($(which kubectl) get po --context $CONTEXT -n $NAMESPACE $POD -o json | jq -r '.spec.containers[0].name')
-    elif [[ $($(which kubectl) get po --context $CONTEXT -n $NAMESPACE $POD -o json | jq -r '.spec.containers | length') -gt 1 ]]; then
-        CONTAINER_LIST=( $($(which kubectl) get po --context $CONTEXT -n $NAMESPACE $POD -o json | jq -r '.spec.containers[].name') )
+    if [[ $(kubectl get po --context $CONTEXT -n $NAMESPACE $POD -o json | jq -r '.spec.containers | length') -eq 1 ]]; then
+        TARGET_CONTAINER=$(kubectl get po --context $CONTEXT -n $NAMESPACE $POD -o json | jq -r '.spec.containers[0].name')
+    elif [[ $(kubectl get po --context $CONTEXT -n $NAMESPACE $POD -o json | jq -r '.spec.containers | length') -gt 1 ]]; then
+        CONTAINER_LIST=( $(kubectl get po --context $CONTEXT -n $NAMESPACE $POD -o json | jq -r '.spec.containers[].name') )
     else
         echo "Unable to retrieve container list for target pod"
         exit 1;
@@ -58,7 +58,7 @@ function choose-containers() {
 
 function get-child-pids() {
     HAS_CHILDREN="false"
-    DOCKER_ID=$($(which kubectl) --context $CONTEXT -n $NAMESPACE get po $POD -o json | jq -r --arg "CONTAINER" "$TARGET_CONTAINER" '.status.containerStatuses | map(select(.name == $CONTAINER)) | .[].containerID' | sed 's#docker://##')
+    DOCKER_ID=$(kubectl --context $CONTEXT -n $NAMESPACE get po $POD -o json | jq -r --arg "CONTAINER" "$TARGET_CONTAINER" '.status.containerStatuses | map(select(.name == $CONTAINER)) | .[].containerID' | sed 's#docker://##')
     PARENT_PID=$(ssh -o StrictHostKeyChecking=no -t $(grep "$NODE" ~/.ssh/config | awk '{print $2}') -- /usr/bin/docker inspect --format '{{.State.Pid}}' ${DOCKER_ID})
     PARENT_PID=${PARENT_PID%$'\r'}
     touch pid_temp

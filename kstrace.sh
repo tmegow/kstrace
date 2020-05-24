@@ -5,6 +5,8 @@ if [ "${BASH_VERSINFO:-0}" -lt 4 ]; then
     exit 1
 fi
 
+command -v jq &>/dev/null || (echo "This script requires jq to be installed (https://stedolan.github.io/jq/)"; exit 1)
+
 NAMESPACE=default
 CONTEXT=$(kubectl config current-context)
 while getopts ":n:c:" opt; do
